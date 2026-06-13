@@ -1,0 +1,4 @@
+# Local test server data / build scratch
+data/
+*.log
+.DS_Store
