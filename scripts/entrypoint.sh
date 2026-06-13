@@ -9,13 +9,11 @@
 set -euo pipefail
 source /opt/koja/scripts/common.sh
 
-# ── EULA ────────────────────────────────────────────────────────────────────
 if [[ "$(lower "${EULA:-false}")" != "true" ]]; then
   die "You must accept the Minecraft EULA by setting EULA=true (https://aka.ms/MinecraftEULA)"
 fi
 echo "eula=true" > /data/eula.txt
 
-# ── Install + provision ─────────────────────────────────────────────────────
 /opt/koja/scripts/install-server.sh
 # shellcheck disable=SC1091
 source /data/.koja/launch.env   # KOJA_LAUNCH_MODE / KOJA_LAUNCH_TARGET / KOJA_MC_VERSION
@@ -28,7 +26,6 @@ select_java_for_mc "${KOJA_MC_VERSION}"
 export KOJA_MC_VERSION
 /opt/koja/scripts/orchestrator-overlay.sh
 
-# ── JVM flags ───────────────────────────────────────────────────────────────
 JVM_FLAGS="$(/opt/koja/scripts/jvm.sh)"
 log "JVM flags: ${JVM_FLAGS}"
 

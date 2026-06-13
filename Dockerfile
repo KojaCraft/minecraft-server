@@ -19,7 +19,6 @@ LABEL org.opencontainers.image.title="KojaCoord Minecraft server" \
       org.opencontainers.image.description="Vanilla/Paper/Spigot/Forge/Fabric/NeoForge/Quilt server for any Minecraft version, resolved from official APIs at boot." \
       org.opencontainers.image.licenses="MIT"
 
-# ── Tooling + extra JDKs ────────────────────────────────────────────────────
 # curl/jq/tar/unzip for API resolution and archive handling; the Adoptium repo
 # gives us Temurin 8 and 17 alongside the base image's 21.
 RUN set -eux; \
@@ -35,7 +34,6 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends temurin-8-jre temurin-17-jre; \
     rm -rf /var/lib/apt/lists/*
 
-# ── Helper binaries (graceful stop + RCON), pinned ──────────────────────────
 # mc-server-runner turns SIGTERM into a clean `stop` on the server's stdin so
 # worlds are saved on shutdown; rcon-cli is what docker.rs invokes for
 # `save-all flush`. Both are tiny static Go binaries (Apache-2.0).
@@ -53,7 +51,6 @@ RUN set -eux; \
     chmod +x /usr/local/bin/mc-server-runner /usr/local/bin/rcon-cli; \
     rm -f /tmp/mcsr.tar.gz /tmp/rcon.tar.gz
 
-# ── Image scripts ───────────────────────────────────────────────────────────
 COPY scripts/ /opt/koja/scripts/
 COPY assets/  /opt/koja/assets/
 RUN chmod +x /opt/koja/scripts/*.sh
