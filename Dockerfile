@@ -19,19 +19,14 @@ LABEL org.opencontainers.image.title="KojaCoord Minecraft server" \
       org.opencontainers.image.description="Vanilla/Paper/Spigot/Forge/Fabric/NeoForge/Quilt server for any Minecraft version, resolved from official APIs at boot." \
       org.opencontainers.image.licenses="MIT"
 
-# curl/jq/tar/unzip for API resolution and archive handling; the Adoptium repo
-# gives us Temurin 8 and 17 alongside the base image's 21.
+# curl/jq/tar/unzip for API resolution and archive handling. JDKs are NOT
+# installed via distro packages — they're self-managed under /opt/koja/jvms by
+# common.sh (resolved from the Adoptium API), so the image owns its runtimes
+# instead of depending on whatever the base image happens to ship.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         bash curl ca-certificates jq tar gzip unzip xz-utils procps tini gosu; \
-    mkdir -p /etc/apt/keyrings; \
-    curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public \
-        | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg; \
-    echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb jammy main" \
-        > /etc/apt/sources.list.d/adoptium.list; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends temurin-8-jre temurin-17-jre; \
     rm -rf /var/lib/apt/lists/*
 
 # mc-server-runner turns SIGTERM into a clean `stop` on the server's stdin so
@@ -54,6 +49,16 @@ RUN set -eux; \
 COPY scripts/ /opt/koja/scripts/
 COPY assets/  /opt/koja/assets/
 RUN chmod +x /opt/koja/scripts/*.sh
+
+# Pre-bake every Java major the runtime can need into the canonical self-managed
+# dir, using the exact same Adoptium resolution the entrypoint falls back to.
+# Normal boots are therefore offline-fast, while JVM management stays decoupled
+# from the base image's packaged JDKs (whose drift previously shipped images
+# that couldn't launch older Minecraft versions). A missing/broken JDK at
+# runtime self-heals by re-fetching. Fails the build loudly if any can't run.
+RUN set -eux; \
+    bash -c 'source /opt/koja/scripts/common.sh; for v in 8 17 21; do ensure_java "$v" >/dev/null; done'; \
+    ls -d /opt/koja/jvms/* /opt/java/openjdk 2>/dev/null
 
 # Baked-in orchestrator overlay drop point. Anything COPY'd or mounted here is
 # applied onto /data automatically (see orchestrator-overlay.sh).
