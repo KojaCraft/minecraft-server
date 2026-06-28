@@ -43,7 +43,12 @@ log "starting ${SERVER_NAME:-server} (${TYPE} ${KOJA_MC_VERSION}) on port ${PORT
 
 # mc-server-runner owns stdin (so RCON-less `stop` works), forwards SIGTERM to a
 # graceful shutdown, and waits the configured time before SIGKILL.
+#
+# Do NOT pass --shell: with -shell set, mc-server-runner runs `exec.Command(shell,
+# <command...>)`, i.e. `bash /path/to/java -jar …` — bash then tries to interpret
+# the java ELF binary as a shell script and dies with "cannot execute binary
+# file" (exit 126). SERVER_CMD is an executable + args, so it must be exec'd
+# directly.
 exec mc-server-runner \
   --stop-duration "${STOP_DURATION:-60s}" \
-  --shell bash \
   -- "${SERVER_CMD[@]}"
