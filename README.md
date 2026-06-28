@@ -1,4 +1,4 @@
-# KojaCoord Minecraft server image
+# KojaCraft Minecraft server image
 
 One image that boots **any** Minecraft version on **Vanilla, Paper, Spigot,
 Forge, Fabric, NeoForge or Quilt**, resolving everything from the official
@@ -8,13 +8,13 @@ with the KojaCraft orchestrator when present.
 ## Build
 
 ```bash
-docker build -t koja/minecraft-server:latest .
+docker build -t KojaCraft/minecraft-server:latest .
 ```
 
 Multi-arch:
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t koja/minecraft-server:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t KojaCraft/minecraft-server:latest --push .
 ```
 
 ## What it does at boot
@@ -47,13 +47,13 @@ Other supported sources (applied in order, later wins):
 | Overlay directory | `ORCHESTRATOR_OVERLAY_DIR` (default `/opt/orchestrator/overlay`) | `COPY` files here at build time, or mount them — copied onto `/data`. |
 | Overlay tarball | `ORCHESTRATOR_OVERLAY_URL` | e.g. a presigned S3 link to `templates/<t>.tar.gz`, extracted onto `/data`. |
 | World | `WORLD_URL` | `.zip`/`.tar.*` extracted onto `/data`. |
-| Connector | (auto, from Releases) | The **proper** connector for the platform — Bukkit plugin for Paper/Spigot/Bukkit, the matching loader mod otherwise — is downloaded automatically from the connector repo's GitHub Releases (`koja-orchestrator-connector-<platform>.jar`). Vanilla is skipped (can't load plugins/mods). |
+| Connector | (auto, from Releases) | The **proper** connector for the platform — Bukkit plugin for Paper/Spigot/Bukkit, the matching loader mod otherwise — is downloaded automatically from the connector repo's GitHub Releases (`kojacraft-orchestrator-connector-<platform>.jar`). Vanilla is skipped (can't load plugins/mods). |
 
 The connector source is resolved in order: a per-platform URL
 (`ORCHESTRATOR_CONNECTOR_{BUKKIT,FABRIC,FORGE,NEOFORGE}_URL`), then
 `ORCHESTRATOR_CONNECTOR_BASE_URL` + naming convention, then
 `ORCHESTRATOR_CONNECTOR_URL`, then — by default — the connector repo's Releases
-(`ORCHESTRATOR_CONNECTOR_REPO`, default `KojacoordNetwork/orchestrator-connector`;
+(`ORCHESTRATOR_CONNECTOR_REPO`, default `KojaCraft/orchestrator-connector`;
 `ORCHESTRATOR_CONNECTOR_TAG`, default `latest`). A missing connector is
 non-fatal — the server still boots.
 
@@ -88,7 +88,7 @@ The client launches this image with the prepared dir mounted at `/data` and sets
 (`{"type":"FABRIC","version":"1.20.1"}`), plus `SERVER_NAME`, `PORT`,
 `TEMPLATE`, `EULA`, `ENABLE_RCON`, `RCON_PASSWORD`. The image to use is
 `docker.default_image` in the orchestrator config (defaults to
-`koja/minecraft-server:latest`).
+`KojaCraft/minecraft-server:latest`).
 
 The orchestrator integration is entirely optional — without any `ORCHESTRATOR_*`
 env or `/data` overlay, the image is a standalone, general-purpose multi-loader
