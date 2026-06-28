@@ -41,20 +41,25 @@ select_java_for_mc() {
     want=21   # snapshot / non-standard → newest runtime
   fi
 
-  local home
+  # Arch is baked into the Temurin paths (…-amd64 / …-arm64). Rather than trust a
+  # hard-coded arch, probe the conventional path AND confirm the binary actually
+  # runs on this host — an `-x` bit says nothing about ELF arch, so a wrong-arch
+  # jvm slips through as "executable" and then dies with exit 126 ("cannot
+  # execute binary file"). _find_jvm verifies by running `java -version`, so we
+  # always fall through to it when the convenient guess can't execute.
+  local arch home=""
+  arch=$(dpkg --print-architecture 2>/dev/null || echo amd64)
   case "$want" in
-    8)  home=$(ls -d /opt/java/openjdk 2>/dev/null || true)
-        home=$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")
-        home="/usr/lib/jvm/temurin-8-jre-amd64";;
-    17) home="/usr/lib/jvm/temurin-17-jre-amd64";;
+    8)  home="/usr/lib/jvm/temurin-8-jre-${arch}";;
+    17) home="/usr/lib/jvm/temurin-17-jre-${arch}";;
     21) home="/opt/java/openjdk";;
   esac
-  # Fall back to whatever `java` resolves to if the expected path is absent
-  # (e.g. arm64 paths differ).
-  if [[ ! -x "${home}/bin/java" ]]; then
+  # Accept the guess only if its java both exists and actually executes here.
+  if [[ ! -x "${home}/bin/java" ]] || ! "${home}/bin/java" -version >/dev/null 2>&1; then
     home=$(_find_jvm "$want")
   fi
-  [[ -x "${home}/bin/java" ]] || die "Could not locate a Java ${want} runtime for Minecraft ${mc}"
+  [[ -x "${home}/bin/java" ]] && "${home}/bin/java" -version >/dev/null 2>&1 \
+    || die "Could not locate a working Java ${want} runtime for Minecraft ${mc}"
   export JAVA_HOME="$home"
   export JAVACMD="${home}/bin/java"
   log "selected Java ${want} (${JAVACMD}) for Minecraft ${mc}"
@@ -76,6 +81,11 @@ _find_jvm() {
       fi
     fi
   done
-  # Last resort: the base image default.
-  printf '%s' "/opt/java/openjdk"
+  # Last resort: only the base image's own runtime (Java 21) — and only if that
+  # is what was asked for. Returning a different major would just fail later
+  # (e.g. Java 21 can't launch a 1.12.2 server), so return nothing and let the
+  # caller die with a clear "no working Java N" message instead.
+  if [[ "$want" == 21 ]] && /opt/java/openjdk/bin/java -version >/dev/null 2>&1; then
+    printf '%s' "/opt/java/openjdk"
+  fi
 }
