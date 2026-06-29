@@ -80,7 +80,7 @@ apply_connector() {
   # are stable per platform, so the "latest release" download link resolves
   # without any API call.
   if [[ -z "$url" ]]; then
-    local repo="${ORCHESTRATOR_CONNECTOR_REPO:-KojacoordNetwork/orchestrator-connector}"
+    local repo="${ORCHESTRATOR_CONNECTOR_REPO:-KojaCraft/orchestrator-connector}"
     local tag="${ORCHESTRATOR_CONNECTOR_TAG:-latest}"
     local asset="koja-orchestrator-connector-${platform}.jar"
     if [[ "$tag" == "latest" ]]; then

@@ -26,8 +26,16 @@ compute_jvm_flags() {
   if [[ -n "${MAX_MEMORY:-}" ]]; then
     max_mb="${MAX_MEMORY%M}"
   elif [[ -n "$mem_mb" ]]; then
-    # Leave ~256 MiB (capped at 1 GiB) headroom for the JVM/native overhead.
-    local headroom=$(( mem_mb / 8 )); (( headroom > 1024 )) && headroom=1024
+    # A Minecraft server needs a LOT of non-heap memory: metaspace, thread
+    # stacks, JIT code cache, GC structures, direct/native buffers and mmap'd
+    # region files. With -XX:+AlwaysPreTouch the heap is committed up front, so
+    # if the heap is sized too close to the cgroup limit the container is
+    # OOM-killed during world load (looks like "exited / not running" to the
+    # orchestrator). Reserve 25% for overhead, floored at 512 MiB and capped at
+    # 2 GiB. e.g. 1024->heap 512, 2048->1536, 4096->3072, 8192->6144.
+    local headroom=$(( mem_mb / 4 ))
+    (( headroom < 512 ))  && headroom=512
+    (( headroom > 2048 )) && headroom=2048
     max_mb=$(( mem_mb - headroom )); (( max_mb < 512 )) && max_mb=512
   else
     max_mb=2048
